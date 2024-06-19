@@ -1,0 +1,20 @@
+version: "3.7"
+services:
+  app:
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    image: hula
+    container_name: hula-app
+    restart: unless-stopped
+    working_dir: /var/www/html
+    ports:
+      - '${APP_PORT:-80}:5555'
+    volumes:
+      - ./:/var/www/html
+    networks:
+      - hula
+
+networks:
+  hula:
+    driver: bridge
