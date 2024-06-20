@@ -9,7 +9,7 @@ abstract class Provider implements ProviderContract
 {
     public const BASE = '';
 
-    public function getConfig()
+    public function getConfig(): array
     {
         return [
             'id' => $this->getId(),

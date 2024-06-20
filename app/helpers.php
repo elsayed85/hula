@@ -3,17 +3,7 @@
 use App\Core\Utils\Media;
 use Symfony\Component\BrowserKit\HttpBrowser;
 use Symfony\Component\DomCrawler\Crawler;
-use Symfony\Component\HttpClient\HttpClient;
 
-function getCrawler($url, $method = 'GET'): Crawler
-{
-    return (new HttpBrowser(HttpClient::create([
-        'headers' => [
-            "User-Agent" => "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029. Safari/537.3",
-            "Accept-Language" => "en-US,en;q=0.5"
-        ]
-    ])))->request($method, $url);
-}
 
 function getCrawlerFromHtml(string $html): Crawler
 {

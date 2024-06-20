@@ -3,6 +3,7 @@
 namespace App\Core\Scraping;
 
 use Symfony\Component\BrowserKit\HttpBrowser;
+use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\HttpClient\HttpClient;
 
 class CustomCrawler
@@ -12,8 +13,6 @@ class CustomCrawler
     public HttpBrowser|null $browser;
 
     private string $baseUrl;
-
-    private string $fullUrl;
 
     public function __construct($baseUrl)
     {
@@ -45,12 +44,12 @@ class CustomCrawler
         return $this;
     }
 
-    public function get($url, $params = []): \Symfony\Component\DomCrawler\Crawler
+    public function get($url, $params = []): Crawler
     {
         return $this->browser->request('GET', $this->getFullUrl($url), $params);
     }
 
-    public function post($url, $params = []): \Symfony\Component\DomCrawler\Crawler
+    public function post($url, $params = []): Crawler
     {
         return $this->browser->request('POST', $this->getFullUrl($url), $params);
     }

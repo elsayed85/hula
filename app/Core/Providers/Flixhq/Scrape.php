@@ -6,7 +6,6 @@ use App\Core\Scraping\CustomCrawler;
 use App\Core\Utils\Movie;
 use App\Core\Utils\Show;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Log;
 use Symfony\Component\DomCrawler\Crawler;
 
 class Scrape
@@ -20,89 +19,92 @@ class Scrape
 
     public function getMovieSources(Movie $ctx, $id): array
     {
-        $id = explode('-', $id);
-        $episodeId = end($id);
-        $items = $this->crawler->get("/ajax/movie/episodes/{$episodeId}")
-            ->filter('.nav-item > a')
-            ->each(function (Crawler $node) {
-                $embed = $node->attr('title');
-                $embed = str_replace('server ', '', strtolower($embed));
-                $id = $node->attr('data-linkid');
+        $episodeId = $this->extractEpisodeId($id);
+        $items = $this->fetchEpisodeItems("/ajax/movie/episodes/{$episodeId}");
 
-                if (empty($embed) || empty($id)) {
-                    return null;
-                }
-
-                return [
-                    'embed' => $embed,
-                    'episodeId' => $id,
-                ];
-            });
-
-        return array_filter($items);
+        return $this->filterValidItems($items);
     }
 
     public function getShowSources(Show $ctx, $id): array
     {
-        $id = explode('-', $id);
-        $episodeId = end($id);
-        $seasonsList = $this->crawler->get("/ajax/season/list/{$episodeId}")->filter('.dropdown-item');
+        $episodeId = $this->extractEpisodeId($id);
+        $seasonId = $this->fetchSeasonId($ctx, $episodeId);
 
-        $seasonId = $seasonsList->each(function ($node, $carry) use ($ctx) {
-            if ($node->text() === "Season {$ctx->season->number}") {
-                return $node->attr('data-id');
-            }
+        $episodes = $this->fetchEpisodes($seasonId);
+        $episodeId = $this->findEpisodeId($ctx, $episodes);
 
-            return null;
-        });
+        $items = $this->fetchEpisodeItems("/ajax/episode/servers/{$episodeId}");
 
-        $seasonId = array_filter($seasonId)[0] ?? null;
-
-        throw_if(empty($seasonId), new \Exception('Season not found'));
-
-        $episodes = $this->crawler->get("/ajax/season/episodes/{$seasonId}")
-            ->filter('.nav-item > a')
-            ->each(function (Crawler $node) {
-                $id = $node->attr('data-id');
-                $title = $node->attr('title');
-
-                return [
-                    'id' => $id,
-                    'title' => $title,
-                ];
-            });
-
-        $episodes = array_filter($episodes, function ($episode) use ($ctx) {
-            return str_starts_with($episode['title'], "Eps {$ctx->episode->number}");
-        });
-
-        throw_if(empty($episodes), new \Exception('Episode not found'));
-
-        $episodeId = $episodes[0]['id'];
-
-        $items = $this->crawler->get("/ajax/episode/servers/{$episodeId}")
-            ->filter('.nav-item > a')
-            ->each(function (Crawler $node) {
-                $embed = $node->attr('title');
-                $embed = str_replace('server ', '', strtolower($embed));
-                $id = $node->attr('data-id');
-
-                if (empty($embed) || empty($id)) {
-                    return null;
-                }
-
-                return [
-                    'embed' => $embed,
-                    'episodeId' => $id,
-                ];
-            });
-
-        return array_filter($items);
+        return $this->filterValidItems($items);
     }
 
     public function getSourceDetails($id)
     {
         $response = Http::get(FlixHQ::BASE . "/ajax/sources/{$id}");
         return $response->json('link') ?? null;
+    }
+
+    private function extractEpisodeId($id): string
+    {
+        $idParts = explode('-', $id);
+        return end($idParts);
+    }
+
+    private function fetchEpisodeItems(string $url): array
+    {
+        return $this->crawler->get($url)
+            ->filter('.nav-item > a')
+            ->each(function (Crawler $node) {
+                $embed = str_replace('server ', '', strtolower($node->attr('title')));
+                $id = $node->attr('data-linkid') ?? $node->attr('data-id');
+
+                if (empty($embed) || empty($id)) {
+                    return null;
+                }
+
+                return [
+                    'embed' => $embed,
+                    'episodeId' => $id,
+                ];
+            });
+    }
+
+    private function fetchSeasonId(Show $ctx, string $episodeId): ?string
+    {
+        $seasonsList = $this->crawler->get("/ajax/season/list/{$episodeId}")
+            ->filter('.dropdown-item')
+            ->each(function (Crawler $node) use ($ctx) {
+                return $node->text() === "Season {$ctx->season->number}" ? $node->attr('data-id') : null;
+            });
+
+        return array_filter($seasonsList)[0] ?? null;
+    }
+
+    private function fetchEpisodes(string $seasonId): array
+    {
+        return $this->crawler->get("/ajax/season/episodes/{$seasonId}")
+            ->filter('.nav-item > a')
+            ->each(function (Crawler $node) {
+                return [
+                    'id' => $node->attr('data-id'),
+                    'title' => $node->attr('title'),
+                ];
+            });
+    }
+
+    private function findEpisodeId(Show $ctx, array $episodes): string
+    {
+        $filteredEpisodes = array_filter($episodes, function ($episode) use ($ctx) {
+            return str_starts_with($episode['title'], "Eps {$ctx->episode->number}");
+        });
+
+        throw_if(empty($filteredEpisodes), new \Exception('Episode not found'));
+
+        return $filteredEpisodes[0]['id'];
+    }
+
+    private function filterValidItems(array $items): array
+    {
+        return array_filter($items);
     }
 }
