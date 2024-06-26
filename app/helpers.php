@@ -4,6 +4,10 @@ use App\Core\Utils\Media;
 use Symfony\Component\BrowserKit\HttpBrowser;
 use Symfony\Component\DomCrawler\Crawler;
 
+function app_path(string $path = ''): string
+{
+    return __DIR__ . "/../app/$path";
+}
 
 function getCrawlerFromHtml(string $html): Crawler
 {

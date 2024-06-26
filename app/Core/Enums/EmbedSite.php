@@ -2,18 +2,15 @@
 
 namespace App\Core\Enums;
 
-enum StreamItemType: string
+enum EmbedSite: string
 {
-    case HLS = 'hls';
-    case DASH = 'dash';
-    case MP4 = 'mp4';
-    case WEBM = 'webm';
-    case MKV = 'mkv';
-    case FLV = 'flv';
-    case M3U8 = 'm3u8';
-    case MPD = 'mpd';
-
+    case UPCLOUD = 'upcloud';
+    case VIDCLOUD = 'vidcloud';
     case UNKNOWN = 'unknown';
+    case VOE = 'voe';
+    case UPSTREAM = 'upstream';
+    case MIXDROP = 'mixdrop';
+    case DOODSTREAM = 'doodstream';
 
     public static function fromString(string $type): self
     {

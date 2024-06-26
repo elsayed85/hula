@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Core\Providers\Flixhq;
+namespace App\Core\Providers\GoMovies;
 
 use App\Core\Enums\EmbedSite;
 use App\Core\Scraping\CustomCrawler;
@@ -15,14 +15,13 @@ class Scrape
 
     public function __construct()
     {
-        $this->crawler = (new CustomCrawler(baseUrl: FlixHQ::BASE))->initBrowser();
+        $this->crawler = (new CustomCrawler(baseUrl: GoMovies::BASE))->initBrowser();
     }
 
     public function getMovieSources(Movie $ctx, $id): array
     {
         $episodeId = $this->extractEpisodeId($id);
         $items = $this->fetchEpisodeItems("/ajax/movie/episodes/{$episodeId}");
-
         return $this->filterValidItems($items);
     }
 
@@ -30,18 +29,15 @@ class Scrape
     {
         $episodeId = $this->extractEpisodeId($id);
         $seasonId = $this->fetchSeasonId($ctx, $episodeId);
-
         $episodes = $this->fetchEpisodes($seasonId);
         $episodeId = $this->findEpisodeId($ctx, $episodes);
-
-        $items = $this->fetchEpisodeItems("/ajax/episode/servers/{$episodeId}");
-
+        $items = $this->fetchEpisodeItems($episodeId);
         return $this->filterValidItems($items);
     }
 
     public function getSourceDetails($id)
     {
-        $response = Http::get(FlixHQ::BASE . "/ajax/sources/{$id}");
+        $response = Http::get(GoMovies::BASE . "/ajax/sources/{$id}");
         return $response->json('link') ?? null;
     }
 
@@ -51,9 +47,11 @@ class Scrape
         return end($idParts);
     }
 
-    private function fetchEpisodeItems(string $url): array
+    private function fetchEpisodeItems($episodeId): array
     {
-        return $this->crawler->get($url)
+        return $this->crawler
+            ->withHeaders(['x-requested-with' => 'XMLHttpRequest'])
+            ->get("/ajax/v2/episode/servers/{$episodeId}")
             ->filter('.nav-item > a')
             ->each(function (Crawler $node) {
                 $embed = str_replace('server ', '', strtolower($node->attr('title')));
@@ -72,8 +70,10 @@ class Scrape
 
     private function fetchSeasonId(Show $ctx, string $episodeId): ?string
     {
-        $seasonsList = $this->crawler->get("/ajax/season/list/{$episodeId}")
-            ->filter('.dropdown-item')
+        $seasonsList = $this->crawler
+            ->withHeaders(['x-requested-with' => 'XMLHttpRequest'])
+            ->get("/ajax/v2/tv/seasons/{$episodeId}")
+            ->filter('.ss-item')
             ->each(function (Crawler $node) use ($ctx) {
                 return $node->text() === "Season {$ctx->season->number}" ? $node->attr('data-id') : null;
             });
@@ -83,8 +83,10 @@ class Scrape
 
     private function fetchEpisodes(string $seasonId): array
     {
-        return $this->crawler->get("/ajax/season/episodes/{$seasonId}")
-            ->filter('.nav-item > a')
+        return $this->crawler
+            ->withHeaders(['x-requested-with' => 'XMLHttpRequest'])
+            ->get("/ajax/v2/season/episodes/{$seasonId}")
+            ->filter('.eps-item')
             ->each(function (Crawler $node) {
                 return [
                     'id' => $node->attr('data-id'),

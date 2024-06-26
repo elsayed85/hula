@@ -30,6 +30,7 @@
     },
     "autoload-dev": {
         "psr-4": {
+            "App\\Core\\Providers\\": "app/Core/Providers/",
             "Tests\\": "tests/"
         }
     },

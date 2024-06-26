@@ -3,6 +3,7 @@
 namespace App\Core\Contracts;
 
 use App\Core\Utils\Movie;
+use App\Core\Utils\ProviderResponse;
 use App\Core\Utils\Show;
 
 interface ProviderContract
@@ -15,7 +16,7 @@ interface ProviderContract
 
     public static function getIsActive(): bool;
 
-    public function scrapeMovie(Movie $ctx);
+    public function scrapeMovie(Movie $ctx): ProviderResponse;
 
-    public function scrapeShow(Show $ctx);
+    public function scrapeShow(Show $ctx): ProviderResponse;
 }
