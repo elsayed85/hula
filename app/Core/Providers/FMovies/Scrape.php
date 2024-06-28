@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Core\Providers\Flixhq;
+namespace App\Core\Providers\FMovies;
 
 use App\Core\Enums\EmbedSite;
 use App\Core\Scraping\CustomCrawler;

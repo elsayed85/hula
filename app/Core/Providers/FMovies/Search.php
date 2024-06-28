@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Core\Providers\Flixhq;
+namespace App\Core\Providers\FMovies;
 
 use App\Core\Scraping\CustomCrawler;
 use App\Core\Utils\Movie;
@@ -13,21 +13,23 @@ class Search
 
     public function __construct()
     {
-        $this->crawler = (new CustomCrawler(baseUrl: Fmovies::BASE))->initBrowser();
+        $this->crawler = (new CustomCrawler(baseUrl: FMovies::BASE))->initBrowser();
     }
 
     public function getId(Movie|Show $ctx): ?string
     {
-        $items = $this->searchItems($ctx->title);
+        $items = $this->searchItems($ctx);
         $items = array_filter($items);
-
         return $this->findMatchingItem($ctx, $items);
     }
 
-    private function searchItems(string $title): array
+    private function searchItems(Movie|Show $ctx): array
     {
-        return $this->crawler->get('/search/' . preg_replace('/[^a-z0-9A-Z]/', '-', $title))
-            ->filter('.film_list-wrap > div.flw-item')
+        $title = str_replace("", "+", $ctx->title);
+        $type = $ctx instanceof Movie ? 'movie' : 'tv';
+        $year = $ctx->year;
+        return $this->crawler->get('/filter?keyword=' . $title . '&type[]=' . $type . '&year[]=' . $year)
+            ->filter('.movies.items')
             ->each(function (Crawler $node) {
                 return $this->extractItemData($node);
             });
@@ -35,17 +37,19 @@ class Search
 
     private function extractItemData(Crawler $node): ?array
     {
-        $id = $node->filter('div.film-poster > a')->attr('href');
-        $title = $node->filter('div.film-detail > h2 > a')->attr('title');
-        $year = $node->filter('div.film-detail > div.fd-infor > span:nth-child(1)')->text();
-        $seasons = str_contains($year, 'SS') ? explode('SS', $year)[1] : '0';
+        $id = $node->filter('a')->attr('data-tip');
+        $id = explode('?', $id)[0];
+        $title = $node->filter('.meta > a')->text('');
+        $year = $node->filter('.meta > div > span')->text('');
+        $seasons = $node->filter('.meta span.type')->text('');
+        $seasons = preg_replace('/\D/', '', $seasons);
 
         if (empty($id) || empty($title) || empty($year)) {
             return null;
         }
 
         return [
-            'id' => $id,
+            'id' => (int)$id,
             'title' => $title,
             'year' => (int)$year,
             'seasons' => (int)$seasons,

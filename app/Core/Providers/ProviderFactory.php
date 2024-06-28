@@ -3,7 +3,7 @@
 namespace App\Core\Providers;
 
 use App\Core\Contracts\ProviderContract;
-use App\Core\Providers\Flixhq\FlixHQ;
+use App\Core\Providers\Flixhq\Fmovies;
 use App\Core\Providers\GoMovies\GoMovies;
 use Exception;
 use Illuminate\Contracts\Container\Container;
@@ -20,7 +20,7 @@ class ProviderFactory
     protected static function getProviders(): array
     {
         return [
-            FlixHQ::getId() => FlixHQ::class,
+            Fmovies::getId() => Fmovies::class,
             GoMovies::getId() => GoMovies::class,
         ];
     }

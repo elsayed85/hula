@@ -3,7 +3,7 @@
 namespace App\Core\Providers\Insertunit;
 
 use App\Core\Enums\EmbedSite;
-use App\Core\Providers\Flixhq\FlixHQ;
+use App\Core\Providers\Flixhq\Fmovies;
 use App\Core\Scraping\CustomCrawler;
 use App\Core\Scraping\HttpClient;
 use App\Core\Utils\Movie;

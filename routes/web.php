@@ -20,12 +20,21 @@ use App\Core\Utils\Season;
 use App\Core\Utils\Show;
 
 $router->get('/', function () use ($router) {
-    $streamItems = (new \App\Core\Providers\Insertunit\Insertunit())
+    $streamItems = (new \App\Core\Providers\FMovies\FMovies())
         ->scrape(
+//            new Show(
+//                title: 'the mandalorian',
+//                year: 2019,
+//                season: new Season(
+//                    number: 1
+//                ),
+//                episode: new Episode(
+//                    number: 1
+//                )
+//            )
             new Movie(
-                title: 'interstellar',
-                year: 2014,
-                imdb_id: 'tt0816692'
+                title: 'IF',
+                year: 2024
             )
         );
 

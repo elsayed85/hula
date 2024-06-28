@@ -5,6 +5,7 @@ namespace App\Core\Providers;
 use App\Core\Contracts\ProviderContract;
 use App\Core\Utils\Media;
 use App\Core\Utils\Movie;
+use App\Core\Utils\ProviderResponse;
 use App\Core\Utils\Show;
 use Symfony\Component\BrowserKit\HttpBrowser;
 
@@ -22,7 +23,7 @@ abstract class Provider implements ProviderContract
         ];
     }
 
-    public function scrape(Media $ctx): array|null
+    public function scrape(Media $ctx): ProviderResponse
     {
         return match (true) {
             $ctx instanceof Movie => $this->scrapeMovie($ctx),
